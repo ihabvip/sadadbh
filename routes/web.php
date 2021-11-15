@@ -16,3 +16,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('invoice','PaymentController@CreateLinkRequest')->name('invoice.index');
+Route::post('status','PaymentController@SendInvoiceStatusRequest')->name('invoice.status');
