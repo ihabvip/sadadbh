@@ -29,15 +29,16 @@ class PaymentController extends Controller
     public $externalReference;
     public $description;
 
-    public function __construct($url, $branch_id, $vendor_id, $terminal_id, $api_key)
+    public function __construct()
     {
-        $this->url = $url;
-        $this->apiKey = $api_key;
+
+        $this->url = 'https://eps-net-uat.sadadbh.com';
+        $this->apiKey = '123456';
         $this->invoiceCreateUrl = $this->url . Self::EPAYMENT_CREATE_URL;
         $this->invoiceStatusUrl = $this->url . Self::EPAYMENT_STATUS_URL;
-        $this->branchId = $branch_id;
-        $this->vendorId = $vendor_id;
-        $this->terminalId = $terminal_id;
+        $this->branchId = '1';
+        $this->vendorId = '1';
+        $this->terminalId = '1';
     }
 
     public function CreateSmsRequest()
@@ -84,6 +85,7 @@ class PaymentController extends Controller
     {
         $response = new \stdClass();
         $errors = $this->ValidateRequestParameters(InvoiceNotifyMode::ONLINE);
+
         if (count($errors) == 0) {
             $invoice = $this->setInvoiceObject(InvoiceNotifyMode::ONLINE);
             $response = Helper::post($this->invoiceCreateUrl, json_encode($invoice));
