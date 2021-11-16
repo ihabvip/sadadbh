@@ -1,4 +1,4 @@
-# SaddedInvoice
+# Sadded Bahrain  Invoice
 
 Project provides methods to generate sadded invoice and a method to check status of an already generated invoice.
 

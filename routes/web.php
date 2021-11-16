@@ -17,5 +17,21 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('invoice','PaymentController@CreateLinkRequest')->name('invoice.index');
+Route::any('invoice','PaymentController@CreateLinkRequest')->name('invoice.index');
 Route::post('status','PaymentController@SendInvoiceStatusRequest')->name('invoice.status');
+
+Route::get('success',function (\Illuminate\Http\Request $request) {
+    return response()->json(
+        $request->all()
+    );
+});
+
+Route::get('error',function (\Illuminate\Http\Request $request) {
+    return response()->json(
+        $request->all()
+    );
+});
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');

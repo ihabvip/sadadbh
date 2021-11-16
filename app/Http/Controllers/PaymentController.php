@@ -6,17 +6,17 @@ use App\Libraries\Helper;
 use App\Libraries\InvoiceNotifyMode;
 use Illuminate\Http\Request;
 use DateTime;
+use Illuminate\Support\Facades\Validator;
 
 class PaymentController extends Controller
 {
     const EPAYMENT_CREATE_URL = "api/v2/web-ven-sdd/epayment/create/";
     const EPAYMENT_STATUS_URL = "api/v2/web-ven-sdd/epayment/status/";
 
-    private $url;
+    public $url;
     private $invoiceCreateUrl;
     private $invoiceStatusUrl;
-    private $apiKey;
-    private $vendorId = -1, $branchId = -1, $terminalId = -1;
+    private $apiKey, $vendorId, $branchId, $terminalId;
 
     public $mode;
     public $msisdn;
@@ -32,13 +32,13 @@ class PaymentController extends Controller
     public function __construct()
     {
 
-        $this->url = 'https://eps-net-uat.sadadbh.com';
-        $this->apiKey = '123456';
+        $this->url = config('sadad.apiKey');
+        $this->apiKey = config('sadad.branchId');
         $this->invoiceCreateUrl = $this->url . Self::EPAYMENT_CREATE_URL;
         $this->invoiceStatusUrl = $this->url . Self::EPAYMENT_STATUS_URL;
-        $this->branchId = '1';
-        $this->vendorId = '1';
-        $this->terminalId = '1';
+        $this->branchId = config('sadad.branchId');
+        $this->vendorId = config('sadad.vendorId');
+        $this->terminalId = config('sadad.terminalId');
     }
 
     public function CreateSmsRequest()
@@ -81,19 +81,56 @@ class PaymentController extends Controller
      * @return    object
      *
      */
-    public function CreateLinkRequest()
+    public function CreateLinkRequest(Request $request)
     {
-        $response = new \stdClass();
-        $errors = $this->ValidateRequestParameters(InvoiceNotifyMode::ONLINE);
 
-        if (count($errors) == 0) {
-            $invoice = $this->setInvoiceObject(InvoiceNotifyMode::ONLINE);
-            $response = Helper::post($this->invoiceCreateUrl, json_encode($invoice));
+        if ($request->isMethod('post')) {
+            $rules = [
+                'customerName' => 'required|unique:posts|max:255',
+                'amount' => 'required',
+                'externalReference' => 'required',
+                'description' => 'required',
+                'msisdn' => 'required',
+                'email' => 'required|email',
+            ];
+
+            $validator = Validator::make($request->all(), $rules);
+
+            if ($validator->fails()) {
+
+                return view('sadad.invoice.index', [
+                    'errors' => $validator->errors()
+                ]);
+
+                $customerName = $request->get('customerName');
+                $amount = $request->get('amount');
+                $date = $request->get('date');
+                $externalReference = $request->get('externalReference');
+                $description = $request->get('description');
+                $msisdn = $request->get('msisdn');
+                $email = $request->get('email');
+
+                $invoice = [];
+                $invoice['api-key'] = $this->apiKey;
+                $invoice['vendor-id'] = $this->vendorId;
+                $invoice['branch-id'] = $this->branchId;
+                $invoice['terminal-id'] = $this->terminalId;
+                $invoice['customer-name'] = $customerName;
+                $invoice['amount'] = $amount;
+                $invoice['date'] = $date;
+                $invoice['notification-mode'] = InvoiceNotifyMode::ONLINE;
+                $invoice['external-reference'] = $externalReference;
+                $invoice['description'] = $description;
+                $invoice['msisdn'] = $this->msisdn;
+                $invoice['email'] = $this->email;
+                $invoice['success-url'] = config('sadad.successUrl');
+                $invoice['error-url'] = config('sadad.errorUrl');
+                $response = Helper::post($this->invoiceCreateUrl, json_encode($invoice));
+                return json_encode($response);
+            }
         } else {
-            $response->{'error-message'} = implode('|', $errors);
-            $response->{'error-code'} = 3;
+            return view('sadad.invoice.index');
         }
-        return json_encode($response);
     }
 
     /**
@@ -121,7 +158,7 @@ class PaymentController extends Controller
      * @return    object
      *
      */
-    private function setInvoiceObject($mode)
+    private function setInvoiceObject($mode, $invoice)
     {
         $invoice = [];
         $invoice['api-key'] = $this->apiKey;
