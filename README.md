@@ -8,9 +8,9 @@ Invoice can be generated using three different notification types i.e. Email, Sm
 
 ### How to use
 
-Soon
+1. Just run php artisan serve  then  http://localhost:8000/invoice
 
-
+2. Fill form and will make payment and return response with status 
 
 #### Guide to Generate invoice
 
