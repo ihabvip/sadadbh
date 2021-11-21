@@ -7,6 +7,7 @@ use App\Libraries\InvoiceNotifyMode;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use DateTime;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 
@@ -131,6 +132,10 @@ class PaymentController extends Controller
 
                 $response = Helper::post($this->invoiceCreateUrl, json_encode($invoice));
 
+                if (!isset($response['payment-url'])) {
+                    return json_encode($response);
+                }
+
                 $payment_url = $response['payment-url'];
 
                 return Redirect::away($payment_url);
@@ -141,14 +146,13 @@ class PaymentController extends Controller
 
     public function successProcess(Request $request)
     {
-        app('log')->error($request->all());
+        app('log')->info($request->all());
         return $this->SendInvoiceStatusRequest($request['TransactionIdentifier']);
-
     }
     public function errorProcess(Request $request)
     {
         app('log')->error($request->all());
-        dd($request->all());
+        return json_encode($request->all());
     }
 
     /**
