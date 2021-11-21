@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Libraries\Helper;
 use App\Libraries\InvoiceNotifyMode;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use DateTime;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 
 class PaymentController extends Controller
@@ -32,8 +34,8 @@ class PaymentController extends Controller
     public function __construct()
     {
 
-        $this->url = config('sadad.apiKey');
-        $this->apiKey = config('sadad.branchId');
+        $this->url = config('sadad.url.test');
+        $this->apiKey = config('sadad.apiKey');
         $this->invoiceCreateUrl = $this->url . Self::EPAYMENT_CREATE_URL;
         $this->invoiceStatusUrl = $this->url . Self::EPAYMENT_STATUS_URL;
         $this->branchId = config('sadad.branchId');
@@ -85,8 +87,9 @@ class PaymentController extends Controller
     {
 
         if ($request->isMethod('post')) {
+
             $rules = [
-                'customerName' => 'required|unique:posts|max:255',
+                'customerName' => 'required',
                 'amount' => 'required',
                 'externalReference' => 'required',
                 'description' => 'required',
@@ -101,10 +104,10 @@ class PaymentController extends Controller
                 return view('sadad.invoice.index', [
                     'errors' => $validator->errors()
                 ]);
-
+            }
                 $customerName = $request->get('customerName');
                 $amount = $request->get('amount');
-                $date = $request->get('date');
+                $date = $request->has('date') ? $request->get('date') : Carbon::now();
                 $externalReference = $request->get('externalReference');
                 $description = $request->get('description');
                 $msisdn = $request->get('msisdn');
@@ -121,16 +124,31 @@ class PaymentController extends Controller
                 $invoice['notification-mode'] = InvoiceNotifyMode::ONLINE;
                 $invoice['external-reference'] = $externalReference;
                 $invoice['description'] = $description;
-                $invoice['msisdn'] = $this->msisdn;
-                $invoice['email'] = $this->email;
+                $invoice['msisdn'] = $msisdn;
+                $invoice['email'] = $email;
                 $invoice['success-url'] = config('sadad.successUrl');
                 $invoice['error-url'] = config('sadad.errorUrl');
+
                 $response = Helper::post($this->invoiceCreateUrl, json_encode($invoice));
-                return json_encode($response);
-            }
+
+                $payment_url = $response['payment-url'];
+
+                return Redirect::away($payment_url);
         } else {
             return view('sadad.invoice.index');
         }
+    }
+
+    public function successProcess(Request $request)
+    {
+        app('log')->error($request->all());
+        return $this->SendInvoiceStatusRequest($request['TransactionIdentifier']);
+
+    }
+    public function errorProcess(Request $request)
+    {
+        app('log')->error($request->all());
+        dd($request->all());
     }
 
     /**

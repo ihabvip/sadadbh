@@ -20,17 +20,9 @@ Route::get('/', function () {
 Route::any('invoice','PaymentController@CreateLinkRequest')->name('invoice.index');
 Route::post('status','PaymentController@SendInvoiceStatusRequest')->name('invoice.status');
 
-Route::get('success',function (\Illuminate\Http\Request $request) {
-    return response()->json(
-        $request->all()
-    );
-});
+Route::post('success','PaymentController@successProcess');
+Route::post('error','PaymentController@errorProcess');
 
-Route::get('error',function (\Illuminate\Http\Request $request) {
-    return response()->json(
-        $request->all()
-    );
-});
 
 Auth::routes();
 
